@@ -1,0 +1,73 @@
+import methods.RequestSpec;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import io.qameta.allure.junit4.DisplayName;
+import io.restassured.RestAssured;
+import io.restassured.response.Response;
+import models.Order;
+
+import org.junit.runners.Parameterized;
+import methods.OrderRequests;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static constants.ApiConstants.BURGERS_URL;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
+
+@RunWith(Parameterized.class)
+public class CreateOrderTest {
+    private final int fromIndex;
+    private final int toIndex;
+    private final int statusCode;
+    private OrderRequests orderRequests;
+    //private static String incorrectHash = "12a34567b89";
+
+
+    public CreateOrderTest(int fromIndex, int toIndex, int statusCode) {
+        this.fromIndex = fromIndex;
+        this.toIndex = toIndex;
+        this.statusCode = statusCode;
+    }
+
+
+    @Parameterized.Parameters
+    public static Object[][] getData() {
+        return new Object[][]{
+                {0, 1, 200},
+                {0, 6, 200},
+                {10, 15, 200},
+        };
+    }
+
+
+    @Before
+    public void setUp() {
+        RestAssured.requestSpecification = RequestSpec.requestSpecification();
+        orderRequests = new OrderRequests();
+    }
+
+    @Test
+    @DisplayName("Проверка создания заказа")
+    public void createOrder() {
+        Response responseGetIngredient = orderRequests.getIngredient();
+        List<String> ingredients = new ArrayList<>(responseGetIngredient.then().log().all().statusCode(200).extract().path("data._id"));
+        Order order = new Order(ingredients.subList(fromIndex, toIndex));
+        Response responseCreate = orderRequests.createOrder(order);
+        responseCreate.then().log().all().statusCode(200).assertThat().body("order.number", notNullValue()).body("success", equalTo(true));
+    }
+
+    @Test
+    @DisplayName("Проверка неуспешного создания заказа с неверными данными")
+    public void createOrderWithIncorrectIngredients() {
+        List<String> ingredients = new ArrayList<>();
+        Order order = new Order(ingredients);
+        Response responseCreate = orderRequests.createOrderWithIncorrectIngredients(order);
+        responseCreate.then().log().all().statusCode(400).assertThat().body("success", equalTo(false)).body("message", equalTo("Ingredient ids must be provided"));
+    }
+
+
+}
+
