@@ -26,6 +26,16 @@ public class OrderRequests {
                 .post(ORDERS);
     }
 
+    @Step("Создать заказ с неверными данными")
+    public Response createOrderWithIncorrectIngredients(Order order){
+        return given()
+                .header("Content-type", "application/json")
+                .and()
+                .body(order)
+                .when()
+                .post(ORDERS);
+    }
+
     @Step("Получить заказы конкретного авторизованного пользователя")
     public Response getOrderUser(String token){
         return given()
@@ -38,4 +48,6 @@ public class OrderRequests {
         return given()
                 .get(ORDERS);
     }
+
+
 }

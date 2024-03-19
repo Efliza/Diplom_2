@@ -23,6 +23,7 @@ public class CreateOrderTest {
     private final int toIndex;
     private final int statusCode;
     private OrderRequests orderRequests;
+    //private static String incorrectHash = "12a34567b89";
 
 
     public CreateOrderTest(int fromIndex, int toIndex, int statusCode) {
@@ -38,7 +39,6 @@ public class CreateOrderTest {
                 {0, 1, 200},
                 {0, 6, 200},
                 {10, 15, 200},
-                {0, 0, 400},
         };
     }
 
@@ -56,10 +56,18 @@ public class CreateOrderTest {
         List<String> ingredients = new ArrayList<>(responseGetIngredient.then().log().all().statusCode(200).extract().path("data._id"));
         Order order = new Order(ingredients.subList(fromIndex, toIndex));
         Response responseCreate = orderRequests.createOrder(order);
-        if (statusCode == 200) {
-            responseCreate.then().log().all().assertThat().body("order.number", notNullValue()).body("success", equalTo(true));
-        } else if (statusCode == 400) {
-            responseCreate.then().log().all().assertThat().body("success", equalTo(false)).body("message", equalTo("Ingredient ids must be provided"));
-        }
+        responseCreate.then().log().all().statusCode(200).assertThat().body("order.number", notNullValue()).body("success", equalTo(true));
     }
+
+    @Test
+    @DisplayName("Проверка неуспешного создания заказа с неверными данными")
+    public void createOrderWithIncorrectIngredients() {
+        List<String> ingredients = new ArrayList<>();
+        Order order = new Order(ingredients);
+        Response responseCreate = orderRequests.createOrderWithIncorrectIngredients(order);
+        responseCreate.then().log().all().statusCode(400).assertThat().body("success", equalTo(false)).body("message", equalTo("Ingredient ids must be provided"));
+    }
+
+
 }
+
